@@ -3,164 +3,71 @@
 namespace App\Http\Controllers\AJAX;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AJAX\StoreChartOfAccountRequest;
+use App\Http\Requests\AJAX\UpdateChartOfAccountRequest;
 use App\Models\ChartOfAccount;
-use Illuminate\Http\Request;
+use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Validation\ValidationException;
 use Exception;
 
 class ChartOfAccountController extends Controller
 {
-    /**
-     * Ambil semua data Chart of Account.
-     */
+    use ApiResponse;
+
     public function list()
     {
         try {
-            $data = ChartOfAccount::orderBy('created_at', 'desc')->get();
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data retrieved successfully',
-                'data' => $data
-            ]);
+            return $this->success('Data retrieved successfully', ChartOfAccount::all());
         } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to retrieve data',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->error('Failed to retrieve data', 500, $e->getMessage());
         }
     }
 
-    /**
-     * Ambil detail 1 COA berdasarkan ID.
-     */
     public function detail($id)
     {
         try {
-            $coa = ChartOfAccount::findOrFail($id);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Detail retrieved successfully',
-                'data' => $coa
-            ]);
+            return $this->success('Detail retrieved successfully', ChartOfAccount::findOrFail($id));
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'COA not found'
-            ], 404);
+            return $this->error('COA not found', 404);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to retrieve detail',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->error('Failed to retrieve detail', 500, $e->getMessage());
         }
     }
 
-    /**
-     * Simpan COA baru.
-     */
-    public function create(Request $request)
+    public function create(StoreChartOfAccountRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'code'           => 'required|string|max:10|unique:chart_of_accounts,code',
-                'name'           => 'required|string|max:100',
-                'normal_balance' => 'required|in:DR,CR',
-                'is_active'      => 'nullable|boolean'
-            ]);
-
-            $coa = ChartOfAccount::create($validated);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'COA created successfully',
-                'data' => $coa
-            ], 201);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
+            return $this->success('COA created successfully', ChartOfAccount::create($request->validated()), 201);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create COA',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->error('Failed to create COA', 500, $e->getMessage());
         }
     }
 
-    /**
-     * Update COA.
-     */
-    public function edit(Request $request, $id)
+    public function edit(UpdateChartOfAccountRequest $request, $id)
     {
         try {
             $coa = ChartOfAccount::findOrFail($id);
+            $coa->update($request->validated());
 
-            $validated = $request->validate([
-                'code'           => 'required|string|max:10|unique:chart_of_accounts,code,' . $coa->id,
-                'name'           => 'required|string|max:100',
-                'normal_balance' => 'required|in:DR,CR',
-                'is_active'      => 'nullable|boolean'
-            ]);
-
-            $coa->update($validated);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'COA updated successfully',
-                'data' => $coa
-            ]);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
+            return $this->success('COA updated successfully', $coa);
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'COA not found'
-            ], 404);
+            return $this->error('COA not found', 404);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to update COA',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->error('Failed to update COA', 500, $e->getMessage());
         }
     }
 
-    /**
-     * Hapus COA.
-     */
     public function delete($id)
     {
         try {
             $coa = ChartOfAccount::findOrFail($id);
             $coa->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'COA deleted successfully'
-            ]);
+            return $this->success('COA deleted successfully');
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'COA not found'
-            ], 404);
+            return $this->error('COA not found', 404);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to delete COA',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->error('Failed to delete COA', 500, $e->getMessage());
         }
     }
 }

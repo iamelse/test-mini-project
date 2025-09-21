@@ -12,13 +12,15 @@
             </a>
         </li>
         <li>
-            <a href="{{ route('chart-of-accounts.index') }}" class="nav-link active d-flex align-items-center gap-2 py-2 px-3">
+            <a href="{{ route('chart-of-accounts.index') }}" 
+            class="nav-link {{ request()->routeIs('chart-of-accounts.*') ? 'active' : 'text-white' }} d-flex align-items-center gap-2 py-2 px-3">
                 <i class='bx bxs-book-content fs-5'></i> 
                 <span class="fw-semibold">Chart of Accounts</span>
             </a>
         </li>
         <li>
-            <a href="{{ route('journals.index') }}" class="nav-link text-white d-flex align-items-center gap-2 py-2 px-3">
+            <a href="{{ route('journals.index') }}" 
+            class="nav-link {{ request()->routeIs('journals.*') ? 'active' : 'text-white' }} d-flex align-items-center gap-2 py-2 px-3">
                 <i class='bx bxs-notepad fs-5'></i> 
                 <span class="fw-semibold">Journals</span>
             </a>

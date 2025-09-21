@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ChartOfAccount;
+use App\Models\Journal;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -22,5 +23,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         ChartOfAccount::factory(100)->create();
+        Journal::factory()->count(50)->create();
     }
 }

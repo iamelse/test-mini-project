@@ -14,9 +14,13 @@ class UpdateJournalRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'ref_no' => 'required|string|max:255',
             'posting_date' => 'required|date',
-            'memo' => 'nullable|string|max:255',
-            'status' => 'required|in:posted',
+            'memo' => 'nullable|string',
+            'lines' => 'sometimes|array',
+            'lines.*.account_id' => 'required|string',
+            'lines.*.debit' => 'required|numeric|min:0',
+            'lines.*.credit' => 'required|numeric|min:0',
         ];
     }
 }

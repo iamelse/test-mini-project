@@ -59,7 +59,7 @@
 <script>
 let lineIndex = 0;
 
-// Hitung total debit & credit
+// ------------------------- TOTALS -------------------------
 function updateTotals() {
     let totalDebit = 0, totalCredit = 0;
     $('#linesTable tbody tr').each(function() {
@@ -72,12 +72,18 @@ function updateTotals() {
     $('#totalCredit').text(totalCredit.toLocaleString());
 }
 
-// Tambah baris line
-function addLine(data={account_id:'', debit:0, credit:0}, readonly=false) {
+// ------------------------- ADD / REMOVE LINE -------------------------
+function addLine(data={account_id:'', debit:0, credit:0}, readonly=false, chartOfAccounts=[]) {
     lineIndex++;
+    // create select options
+    let options = chartOfAccounts.map(coa => `<option value="${coa.id}" ${coa.id==data.account_id?'selected':''}>${coa.code} - ${coa.name}</option>`).join('');
     let row = `<tr data-index="${lineIndex}">
         <td class="text-center">${lineIndex}</td>
-        <td><input type="text" class="form-control line-account" value="${data.account_id}" required ${readonly?'readonly':''}></td>
+        <td>
+            <select class="form-control line-account" required ${readonly?'disabled':''}>
+                ${options}
+            </select>
+        </td>
         <td><input type="number" min="0" step="0.01" class="form-control line-debit text-end" value="${data.debit}" ${readonly?'readonly':''}></td>
         <td><input type="number" min="0" step="0.01" class="form-control line-credit text-end" value="${data.credit}" ${readonly?'readonly':''}></td>
         <td class="text-center">
@@ -89,14 +95,13 @@ function addLine(data={account_id:'', debit:0, credit:0}, readonly=false) {
 }
 
 // Event tambah & hapus line
-$('#btnAddLine').click(()=> addLine());
+$('#btnAddLine').click(()=> addLine({}, false, window.chartOfAccounts || []));
 $('#linesTable').on('click','.btn-remove-line', function(){ $(this).closest('tr').remove(); updateTotals(); });
 $('#linesTable').on('input','.line-debit, .line-credit', updateTotals);
 
 // Modal Bootstrap
 let journalModal = new bootstrap.Modal(document.getElementById('journalModal'));
 
-// RESET modal saat ditutup
 $('#journalModal').on('hidden.bs.modal', function () {
     $('#journalForm')[0].reset();
     $('#linesTable tbody').empty();
@@ -109,7 +114,6 @@ $('#journalModal').on('hidden.bs.modal', function () {
 
 // BUTTON CREATE / ADD NEW
 $('#btnAddJournal').click(function(){
-    // reset semua
     $('#journalForm')[0].reset();
     $('#journalId').val('');
     $('#linesTable tbody').empty();
@@ -143,12 +147,10 @@ $('#journalTable').on('click', '.btn-detail, .btn-edit', function(){
                     account_id: line.account_id,
                     debit: line.debit,
                     credit: line.credit
-                }, !isEdit); // readonly kalau detail
+                }, !isEdit, window.chartOfAccounts || []);
             });
 
             $('#journalModalTitle').html(isEdit ? "<i class='bx bx-edit-alt'></i> Edit Journal" : "<i class='bx bx-show'></i> View Journal");
-
-            // Header fields & tombol
             $('#ref_no, #posting_date, #memo').prop('readonly', !isEdit);
             if(!isEdit){
                 $('#btnSave, #btnAddLine').hide();
@@ -184,6 +186,8 @@ $('#journalForm').submit(function(e){
         status: 'posted',
         lines: lines
     };
+
+    console.log("Submitting Journal Payload:", payload);
 
     $.ajax({
         url: url,

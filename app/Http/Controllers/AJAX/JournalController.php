@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AJAX\StoreJournalRequest;
 use App\Http\Requests\AJAX\UpdateJournalRequest;
 use App\Models\Journal;
-use App\Models\JournalLine;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class JournalController extends Controller
 {
@@ -58,14 +58,13 @@ class JournalController extends Controller
     public function create(StoreJournalRequest $request)
     {
         try {
-            $journal = Journal::create($request->validated());
+            $journal = DB::transaction(function () use ($request) {
+                $journal = Journal::create($request->validated());
 
-            // Tambahkan lines jika ada input lines dari frontend
-            if ($request->has('lines')) {
-                foreach ($request->lines as $line) {
-                    $journal->lines()->create($line);
-                }
-            }
+                collect($request->lines ?? [])->each(fn($line) => $journal->lines()->create($line));
+
+                return $journal;
+            });
 
             $journal->debit_total = $journal->lines->sum(fn($line) => $line->debit);
             $journal->credit_total = $journal->lines->sum(fn($line) => $line->credit);
@@ -79,18 +78,16 @@ class JournalController extends Controller
     public function edit(UpdateJournalRequest $request, $id)
     {
         try {
-            $journal = Journal::with('lines')->findOrFail($id);
-            $journal->update($request->validated());
+            $journal = DB::transaction(function () use ($request, $id) {
+                $journal = Journal::with('lines')->findOrFail($id);
+                $journal->update($request->validated());
 
-            // Update lines jika ada input baru
-            if ($request->has('lines')) {
-                // Hapus lines lama
+                // Hapus lines lama dan tambahkan baru
                 $journal->lines()->delete();
-                // Tambahkan line baru
-                foreach ($request->lines as $line) {
-                    $journal->lines()->create($line);
-                }
-            }
+                collect($request->lines ?? [])->each(fn($line) => $journal->lines()->create($line));
+
+                return $journal;
+            });
 
             $journal->debit_total = $journal->lines->sum(fn($line) => $line->debit);
             $journal->credit_total = $journal->lines->sum(fn($line) => $line->credit);
